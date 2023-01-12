@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { blue, yellow } from '@mui/material/colors';
@@ -11,7 +11,6 @@ import {
   Chip,
   Stack,
   Divider,
-  Fab,
   Card,
   CardContent,
   TableContainer,
@@ -20,18 +19,18 @@ import {
   TableBody,
   TableCell,
   TableRow,
-  Paper,
   Avatar,
-  Box
+  Box,
+  CircularProgress,
+  Skeleton
 } from '@mui/material';
-
-import { Alchemy, Network, Utils } from 'alchemy-sdk';
-import { ethers } from 'ethers';
 
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import DownloadingIcon from '@mui/icons-material/Downloading';
-import SearchIcon from '@mui/icons-material/Search';
+
+import { Alchemy, Network, Utils } from 'alchemy-sdk';
+import { ethers } from 'ethers';
 
 const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
 
@@ -41,6 +40,8 @@ const theme = createTheme({
     secondary: yellow,
   },
 });
+
+const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_TESTNET_API_KEY;
 
 function App() {
   const [connected, setConnected] = useState(false);
@@ -59,6 +60,12 @@ function App() {
     }
   }
 
+  useEffect(() => {
+    if (connected) {
+      getTokenBalance();
+    }
+  }, [userAddress, connected]);
+
   async function disconnectWallet() {
     setConnected(false);
     setHasQueried(false);
@@ -68,17 +75,13 @@ function App() {
 
   async function getTokenBalance() {
     const config = {
-      apiKey: "...", // your alchemy api key ,
+      apiKey: ALCHEMY_API_KEY,
       network: Network.ETH_MAINNET,
     };
 
     const alchemy = new Alchemy(config);
     const data = await alchemy.core.getTokenBalances(userAddress);
-
     setResults(data);
-
-    console.log(data);
-
     const tokenDataPromises = [];
 
     for (let i = 0; i < data.tokenBalances.length; i++) {
@@ -89,12 +92,9 @@ function App() {
     }
 
     setTokenDataObjects(await Promise.all(tokenDataPromises));
-
-    console.log(await Promise.all(tokenDataPromises));
     setHasQueried(true);
   }
   return (
-    <>
       <ThemeProvider theme={theme}>
         <AppBar position='fixed' color='primary'>
           <Toolbar variant='dense'>
@@ -106,22 +106,24 @@ function App() {
             >
               Indexer
             </Typography>
-            {connected && (
-              <>
-                <Stack direction="row" spacing={1}>
-                  <Chip
-                    label={userAddress}
-                    size='small'
-                    variant='filled'
-                    color='secondary'
-                    deleteIcon={<PowerSettingsNewIcon />}
-                    onDelete={() => {
-                      disconnectWallet();
-                    }}
-                  />
-                </Stack>
-              </>
-            )}
+            {connected &&
+              <Stack direction="row" spacing={1}>
+                {
+                  !hasQueried && <CircularProgress color="secondary" size={25}
+                    thickness={4} />
+                }
+                <Chip
+                  label={userAddress}
+                  size='small'
+                  variant='filled'
+                  color='secondary'
+                  deleteIcon={<PowerSettingsNewIcon />}
+                  onDelete={() => {
+                    disconnectWallet();
+                  }}
+                />
+              </Stack>
+            }
             {!connected && (
               <Button
                 size='small'
@@ -145,27 +147,26 @@ function App() {
         )}
 
         {connected &&
-          <>
-            <Box m={1} mt={7}>
+          <Box m={1} mt={7}>
+            <Card>
+              <CardContent>
+                <Typography gutterBottom variant="h5" component="div">
+                  Assets
+                </Typography>
 
-              <Card>
-                <CardContent>
-                  <Typography gutterBottom variant="h5" component="div">
-                    Assets
-                  </Typography>
-
-                  <TableContainer component={Paper}>
-                    <Table sx={{ minWidth: 650 }}>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell></TableCell>
-                          <TableCell align="left">Token</TableCell>
-                          <TableCell align="left">Symbol</TableCell>
-                          <TableCell align="center">Balance</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {hasQueried && results.tokenBalances.map((e, i) => (
+                <TableContainer>
+                  <Table sx={{ minWidth: 650 }}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell></TableCell>
+                        <TableCell align="left">Token</TableCell>
+                        <TableCell align="left">Symbol</TableCell>
+                        <TableCell align="center">Balance</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {
+                        hasQueried && results.tokenBalances.map((e, i) => (
                           <TableRow
                             key={i}
                             sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
@@ -184,31 +185,26 @@ function App() {
                               tokenDataObjects[i].decimals
                             )).toFixed(3)}</TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                  { !hasQueried && (
-                      "Please make a query! This may take a few seconds..."
-                    )
-                  }
-                </CardContent>
-              </Card>
-
-            </Box>
-
-            <Fab color="secondary" size="small" variant="extended" aria-label="add" sx={{
-              position: "absolute",
-              bottom: 25,
-              right: 25
-            }} onClick={getTokenBalance}>
-              <SearchIcon />
-              Query
-            </Fab>
-          </>
+                        ))
+                      }
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                {
+                  !hasQueried &&
+                  <Stack>
+                    <Skeleton variant="text" height={75} />
+                    <Divider></Divider>
+                    <Skeleton variant="text" height={75} />
+                    <Divider></Divider>
+                    <Skeleton variant="text" height={75} />
+                  </Stack>
+                }
+              </CardContent>
+            </Card>
+          </Box>
         }
       </ThemeProvider>
-    </>
   );
 }
 
