@@ -1,13 +1,5 @@
 import { useState } from 'react';
 
-import {
-  Box,
-  Flex,
-  Heading,
-  Image,
-  SimpleGrid,
-} from '@chakra-ui/react';
-
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { blue, yellow } from '@mui/material/colors';
 
@@ -19,7 +11,18 @@ import {
   Chip,
   Stack,
   Divider,
-  Fab
+  Fab,
+  Card,
+  CardContent,
+  TableContainer,
+  Table,
+  TableHead,
+  TableBody,
+  TableCell,
+  TableRow,
+  Paper,
+  Avatar,
+  Box
 } from '@mui/material';
 
 import { Alchemy, Network, Utils } from 'alchemy-sdk';
@@ -58,11 +61,14 @@ function App() {
 
   async function disconnectWallet() {
     setConnected(false);
+    setHasQueried(false);
+    setTokenDataObjects([]);
+    setResults([]);
   }
 
   async function getTokenBalance() {
     const config = {
-      apiKey: "", // your alchemy api key ,
+      apiKey: "...", // your alchemy api key ,
       network: Network.ETH_MAINNET,
     };
 
@@ -70,6 +76,8 @@ function App() {
     const data = await alchemy.core.getTokenBalances(userAddress);
 
     setResults(data);
+
+    console.log(data);
 
     const tokenDataPromises = [];
 
@@ -81,6 +89,8 @@ function App() {
     }
 
     setTokenDataObjects(await Promise.all(tokenDataPromises));
+
+    console.log(await Promise.all(tokenDataPromises));
     setHasQueried(true);
   }
   return (
@@ -94,7 +104,7 @@ function App() {
               variant='h6'
               sx={{ flexGrow: 1 }}
             >
-              Web3 Indexer
+              Indexer
             </Typography>
             {connected && (
               <>
@@ -127,14 +137,65 @@ function App() {
             )}
           </Toolbar>
         </AppBar>
+
         {!connected && (
           <Typography m={30} align='center' variant='h4'>
             “Building ERC20 & NFT Indexer Powered by Cryptographic Truth”
           </Typography>
         )}
-        {
-          connected &&
+
+        {connected &&
           <>
+            <Box m={1} mt={7}>
+
+              <Card>
+                <CardContent>
+                  <Typography gutterBottom variant="h5" component="div">
+                    Assets
+                  </Typography>
+
+                  <TableContainer component={Paper}>
+                    <Table sx={{ minWidth: 650 }}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell align="left">Logo</TableCell>
+                          <TableCell align="left">Token</TableCell>
+                          <TableCell align="left">Symbol</TableCell>
+                          <TableCell align="center">Balance</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {hasQueried ? results.tokenBalances.map((e, i) => (
+                          <TableRow
+                            key={i}
+                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                          >
+                            <TableCell align="left">
+                              <Avatar alt={tokenDataObjects[i].symbol} src={tokenDataObjects[i].logo} />
+                            </TableCell>
+                            <TableCell align="left">
+                              {tokenDataObjects[i].name}
+                            </TableCell>
+                            <TableCell align="left">
+                              {tokenDataObjects[i].symbol}
+                            </TableCell>
+                            <TableCell align="center">{Utils.formatUnits(
+                              e.tokenBalance,
+                              tokenDataObjects[i].decimals
+                            )}</TableCell>
+                          </TableRow>
+                        )) : (
+                          "Please make a query! This may take a few seconds..."
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+
+                </CardContent>
+              </Card>
+
+            </Box>
+
             <Fab color="secondary" size="small" variant="extended" aria-label="add" sx={{
               position: "absolute",
               bottom: 25,
@@ -143,46 +204,6 @@ function App() {
               <SearchIcon />
               Query
             </Fab>
-
-            <Flex
-              w='100%'
-              flexDirection='column'
-              alignItems='center'
-              justifyContent={"center"}
-            >
-
-              <Heading my={36}>ERC-20 token balances:</Heading>
-
-              {hasQueried ? (
-                <SimpleGrid w={"90vw"} columns={4} spacing={24}>
-                  {results.tokenBalances.map((e, i) => {
-                    return (
-                      <Flex
-                        flexDir={"column"}
-                        color='white'
-                        bg='blue'
-                        w={"20vw"}
-                        key={e.id}
-                      >
-                        <Box>
-                          <b>Symbol:</b> ${tokenDataObjects[i].symbol}&nbsp;
-                        </Box>
-                        <Box>
-                          <b>Balance:</b>&nbsp;
-                          {Utils.formatUnits(
-                            e.tokenBalance,
-                            tokenDataObjects[i].decimals
-                          )}
-                        </Box>
-                        <Image src={tokenDataObjects[i].logo} />
-                      </Flex>
-                    );
-                  })}
-                </SimpleGrid>
-              ) : (
-                "Please make a query! This may take a few seconds..."
-              )}
-            </Flex>
           </>
         }
       </ThemeProvider>
