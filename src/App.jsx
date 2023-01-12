@@ -158,19 +158,19 @@ function App() {
                     <Table sx={{ minWidth: 650 }}>
                       <TableHead>
                         <TableRow>
-                          <TableCell align="left">Logo</TableCell>
+                          <TableCell></TableCell>
                           <TableCell align="left">Token</TableCell>
                           <TableCell align="left">Symbol</TableCell>
                           <TableCell align="center">Balance</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {hasQueried ? results.tokenBalances.map((e, i) => (
+                        {hasQueried && results.tokenBalances.map((e, i) => (
                           <TableRow
                             key={i}
                             sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                           >
-                            <TableCell align="left">
+                            <TableCell align="right">
                               <Avatar alt={tokenDataObjects[i].symbol} src={tokenDataObjects[i].logo} />
                             </TableCell>
                             <TableCell align="left">
@@ -179,18 +179,19 @@ function App() {
                             <TableCell align="left">
                               {tokenDataObjects[i].symbol}
                             </TableCell>
-                            <TableCell align="center">{Utils.formatUnits(
+                            <TableCell align="center">{parseFloat(Utils.formatUnits(
                               e.tokenBalance,
                               tokenDataObjects[i].decimals
-                            )}</TableCell>
+                            )).toFixed(3)}</TableCell>
                           </TableRow>
-                        )) : (
-                          "Please make a query! This may take a few seconds..."
-                        )}
+                        ))}
                       </TableBody>
                     </Table>
                   </TableContainer>
-
+                  { !hasQueried && (
+                      "Please make a query! This may take a few seconds..."
+                    )
+                  }
                 </CardContent>
               </Card>
 
