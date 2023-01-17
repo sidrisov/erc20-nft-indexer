@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { blue, yellow } from '@mui/material/colors';
+import CssBaseline from "@mui/material/CssBaseline";
+import GlobalStyles from "@mui/material/GlobalStyles";
 
 import {
   AppBar,
@@ -22,29 +24,24 @@ import {
   Box,
   CircularProgress,
   Skeleton,
-  Grid
+  Grid,
+  IconButton
 } from '@mui/material';
 
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import DownloadingIcon from '@mui/icons-material/Downloading';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
 
 import { Alchemy, Network, Utils } from 'alchemy-sdk';
 import { ethers } from 'ethers';
 
 const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-
-const theme = createTheme({
-  palette: {
-    primary: blue,
-    secondary: yellow,
-    mode: "light"
-  }
-});
-
 const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_TESTNET_API_KEY;
 
 function App() {
+  const [darkMode, setDarkMode] = useState(false)
   const [connected, setConnected] = useState(false);
   const [userAddress, setUserAddress] = useState("");
   const [results, setResults] = useState({ "tokens": [], "nfts": [] });
@@ -53,6 +50,22 @@ function App() {
   const [tokenFilter, setTokenFilter] = useState({
     "isErc20": true // false for nfts
   });
+
+  const theme = useMemo(() =>
+    createTheme({
+      palette: {
+        primary: blue,
+        secondary: yellow,
+        mode: darkMode ? "dark" : "light"
+      },
+    }), [darkMode]
+  );
+
+  useMemo(() => {
+    if (connected) {
+      fetchAllAssets();
+    }
+  }, [userAddress, connected, tokenFilter]);
 
   async function connectWallet() {
     const accounts = await provider.send('eth_requestAccounts', []);
@@ -63,17 +76,6 @@ function App() {
       setConnected(true);
     }
   }
-
-  useEffect(() => {
-    if (connected) {
-      fetchAllAssets();
-    }
-  }, [userAddress, connected, tokenFilter]);
-
-  useEffect(() => {
-    console.log("results: ", results);
-    console.log("meta: ", metaDataObjects);
-  }, [results, metaDataObjects]);
 
   async function disconnectWallet() {
     setConnected(false);
@@ -131,6 +133,12 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <GlobalStyles
+        styles={{
+          body: { backgroundColor: darkMode ? "#121212" : "#f8fafc" }
+        }}
+      />
       <AppBar position='fixed' color='primary'>
         <Toolbar variant='dense'>
           <DownloadingIcon color={connected ? "secondary" : "inherit"} />
@@ -165,7 +173,7 @@ function App() {
               />
             </Stack>
           }
-          {!connected && 
+          {!connected &&
             <Button
               size='small'
               variant='outlined'
@@ -178,6 +186,9 @@ function App() {
               Connect
             </Button>
           }
+          <IconButton onClick={() => setDarkMode((darkMode) => !darkMode)} color="inherit">
+            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+          </IconButton>
         </Toolbar>
       </AppBar>
       {!connected && (
@@ -190,10 +201,10 @@ function App() {
           <Card>
             <CardContent>
               <Box sx={{ justifyContent: "space-between", display: "flex", flexDirection: "row" }}>
-                <Typography gutterBottom variant="h6" component="box">
+                <Typography gutterBottom variant="h6">
                   Assets
                 </Typography>
-                <Typography gutterBottom variant="subtitle1" component="box">
+                <Typography gutterBottom variant="subtitle1">
                   {tokenFilter.isErc20 ? "ERC20" : "NFTs"}
                 </Typography>
               </Box>
@@ -258,8 +269,8 @@ function App() {
                         </Stack>
                       </Grid>
                     )) :
-                    [...Array(3)].map(() => (
-                      <Grid item>
+                    [...Array(3)].map((e, i) => (
+                      <Grid item key={"gridItemSkeleton" + i}>
                         <Skeleton variant="rectangular" width={150} height={150} />
                       </Grid>
                     ))
