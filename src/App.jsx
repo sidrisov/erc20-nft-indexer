@@ -31,8 +31,8 @@ import {
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import DownloadingIcon from '@mui/icons-material/Downloading';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 
 import { Alchemy, Network, Utils } from 'alchemy-sdk';
 import { ethers } from 'ethers';
@@ -186,9 +186,9 @@ function App() {
               Connect
             </Button>
           }
-          <IconButton onClick={() => setDarkMode((darkMode) => !darkMode)} color="inherit">
-            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
+          <IconButton variant="outlined" onClick={() => setDarkMode((darkMode) => !darkMode)} color="inherit">
+            {darkMode ? <DarkModeOutlinedIcon /> : <LightModeOutlinedIcon />}
+          </IconButton >
         </Toolbar>
       </AppBar>
       {!connected && (
